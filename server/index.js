@@ -9,6 +9,7 @@ const db = require('../database/index.js');
 
 app.get('/qa/questions?product_id', (req, res) => {
   // Get all questions from db with that product id, return to app
+  // There is a query coming in here with product_id
 });
 
 app.post('/qa/questions', (req, res) => {

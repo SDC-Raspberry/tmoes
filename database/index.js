@@ -47,7 +47,7 @@ const AnswersPhotosSchema = new Schema({
 
 const AnswersPhotosModel = mongoose.model('answers_photos', AnswersPhotosSchema);
 
-// HELPER FUNCTIONS
+// ------------- HELPER FUNCTIONS
 /*
   View questions
     2 q's for default
@@ -59,9 +59,11 @@ const AnswersPhotosModel = mongoose.model('answers_photos', AnswersPhotosSchema)
   Answer a question
 */
 
-// QUERY FUNCTIONS
+// ------------- QUERY FUNCTIONS
 
-// CONNECT TO DB
+
+
+// ------------- CONNECT TO DB
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "Error connecting to database"));
 db.once("open", () => {
