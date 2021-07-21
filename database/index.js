@@ -66,11 +66,11 @@ const formatDate = (d) => {
 
 
 // ------------- QUERY FUNCTIONS
-const getQuestions = (product_id, callback) => {
-  db.questions.find({product_id: `${product_id}`}).sort({id: 1}).exec((err, questions) => {
+const getQuestions = async (product_id, callback) => {
+  db.questions.find({product_id: `${product_id}`}).exec((err, questions) => {
     if (err) {
       console.error.bind(console, "Error retrieving questions");
-      callback(null);
+      callback(err);
     } else {
       let questionsData = [];
       questions.forEach(question => {
@@ -91,7 +91,7 @@ const getQuestions = (product_id, callback) => {
   });
 };
 
-const saveQuestion = (data, callback) => {
+const saveQuestion = async (data, callback) => {
   return new Promise ((resolve, reject) => {
     // Get highest question id for specific product and increment by 1
     let newQuestionId = db.questions.find({product_id: data.data.product_id}).sort({id: -1}).limit(1)
@@ -106,17 +106,43 @@ const saveQuestion = (data, callback) => {
           reported: 0,
           helpful: 0
         };
-        document.questions.save( err => {
-          if (err) {
-            console.error.bind(console, "Error saving question");
-            callback(err);
-          } else {
+        db.questions.insertOne(document)
+          .then(() => {
             resolve('Successfully saved question');
-          }
-        });
-      });
+          });
+      })
+      .catch((err) => {
+        console.error.bind(console, "Error saving question: " + err);
+        reject(err);
+      })
   });
+  callback();
 }
+
+const getAnswers = (question_id, callback) => {
+  db.answers.find({question_id: `${question_id}`}).exec((err, questions) => {
+    if (err) {
+      console.error.bind(console, "Error retrieving answers");
+      callback(err);
+    } else {
+      let answerData = [];
+      questions.forEach(answer => {
+        let transformedDate = formatDate("/Date("+answer.date_written+")/");
+        answerData.push(
+          id: answer.id,
+          question_id: answer.question_id,
+          body: answer.body,
+          date_written: transformedDate,
+          answerer_name: answer.answerer_name,
+          answerer_email: answer.answerer_email,
+          reported: answer.reported,
+          helpful: answer.helpful
+        )
+      });
+      callback(answerData);
+    }
+  });
+};
 
 
 // ------------- CONNECT TO DB
@@ -131,3 +157,4 @@ db.once("open", () => {
 
 module.exports.getQuestions = getQuestions;
 module.exports.saveQuestion = saveQuestion;
+module.exports.getAnswers = getAnswers;

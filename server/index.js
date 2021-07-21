@@ -14,8 +14,7 @@ app.use(express.urlencoded({extended: true}));
 
 app.get('/qa/questions', (req, res) => {
   // Get all questions from db with that product id, return to app
-  // There is a query coming in here with product_id
-  db.getQuestions((req.query, () => {
+  db.getQuestions((req.query.product_id, () => {
     res.send(data);
   });
 });
@@ -27,28 +26,31 @@ app.post('/qa/questions', (req, res) => {
   })
 });
 
-app.get('/qa/answers?question_id', (req, res) => {
+app.get('/qa/answers', (req, res) => {
   // Get all answers with coreesponding question id, return to app
+  db.getAnswers(req.query.question_id, () => {
+    res.send(data);
+  });
 });
 
-app.post('/qa/questions/question_id/answers', (req, res) => { // question_id is not correct
+app.post('/qa/questions/:question_id/answers', (req, res) => {
   //Add answer to db that includes question id, body, etc
 });
 
-app.put('/qa/questions/question_id/helpful', (req, res) => { //question_id is not correct
+app.put('/qa/questions/:question_id/helpful', (req, res) => {
   // Increment helpful document for question
 });
 
-app.put('/qa/answers/answer_id/helpful', (req, res) => { //answer_id is not correct
+app.put('/qa/answers/:answer_id/helpful', (req, res) => {
   // Increment helpful document of answer
 });
 
-app.put('/qa/questions/question_id/report', (req, res) => { // question_id is not correct
+app.put('/qa/questions/:question_id/report', (req, res) => {
   // If question hasn't been reported, report it
 
 });
 
-app.put('/qa/answers/answer.id/report', (req, res) => { //answer.id is not correct
+app.put('/qa/answers/:answer_id/report', (req, res) => {
   // If answer is not reported already, report it
 });
 
