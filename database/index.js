@@ -60,6 +60,34 @@ const AnswersPhotosModel = mongoose.model('answers_photos', AnswersPhotosSchema)
 */
 
 // ------------- QUERY FUNCTIONS
+const getQuestions = (product_id, callback) => {
+  db.find({product_id: `${product_id}`}).sort({id: 1}).exec((err, questions) => {
+    if (err) {
+      console.error.bind(console, "Error retrieving questions");
+      callback(null);
+    } else {
+      let questionsData = [];
+      questions.forEach(question => {
+        let formatDate = (d) => {
+          var m = d.match(/\/Date\((\d+)\)\//);
+          return m ? (new Date(+m[1])).toLocalDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'}) : d;
+        };
+        let transformedDate = formatDate("/Date("+question.date_written+")/");
+        questionsData.push(
+          question_id: question.id,
+          product_id: question.product_id,
+          body: question.body,
+          date_written: transformedDate,
+          asker_name: question.asker_name,
+          asker_email: question.asker_email,
+          reported: question.reported,
+          helpful: question.helpful
+        )
+      });
+      callback(questionsData);
+    }
+  });
+};
 
 
 

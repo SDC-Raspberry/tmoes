@@ -7,9 +7,18 @@ const db = require('../database/index.js');
 
 // app.get('/', (req, res) => res.send('Message from Express route handler: Test!'));
 
-app.get('/qa/questions?product_id', (req, res) => {
+// Mounting Middleware
+app.use(express.static(__dirname + '/../client/dist'));
+app.use(parser.json());
+app.use(express.urlencoded({extended: true}));
+
+app.get('/qa/questions', (req, res) => {
   // Get all questions from db with that product id, return to app
   // There is a query coming in here with product_id
+  let product_id = req.query;
+  db.getQuestions((product_id, () => {
+    res.send(data);
+  });
 });
 
 app.post('/qa/questions', (req, res) => {
