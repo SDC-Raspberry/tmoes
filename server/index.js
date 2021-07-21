@@ -15,14 +15,16 @@ app.use(express.urlencoded({extended: true}));
 app.get('/qa/questions', (req, res) => {
   // Get all questions from db with that product id, return to app
   // There is a query coming in here with product_id
-  let product_id = req.query;
-  db.getQuestions((product_id, () => {
+  db.getQuestions((req.query, () => {
     res.send(data);
   });
 });
 
 app.post('/qa/questions', (req, res) => {
   // Add question to db that includes question id, body, etc
+  db.saveQuestion(req.body, () => {
+    res.send();
+  })
 });
 
 app.get('/qa/answers?question_id', (req, res) => {
