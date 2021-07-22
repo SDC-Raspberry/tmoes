@@ -143,15 +143,24 @@ const getAnswers = async (question_id, callback) => {
     }
   })
     .then(() => {
+      let photos = [];
       answerData.forEach(answer => {
         db.answer_photos.find({answer_id: answer.answer_id}).exec( (err, pics) => {
           if (err) {
             console.error.bind(console, "Error retrieving answer photos: " + err);
             callback(err);
+          } else {
+            pics.forEach((pic) => {
+              photos.push({
+                id: pic.id,
+                answer_id: pic.answer_id,
+                url: pic.url
+              })
+            })
           }
-        return pics;
         })
       });
+      return photos;
     })
     .then((pics) => {
       for (let i = 0; i < answerData.length; i++) {
@@ -161,8 +170,8 @@ const getAnswers = async (question_id, callback) => {
           }
         }
       }
-      callback(answerData);
     });
+  callback(answerData);
 };
 
 
