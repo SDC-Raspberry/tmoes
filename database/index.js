@@ -69,13 +69,13 @@ const formatDate = (d) => {
 const getQuestions = async (product_id, callback) => {
   db.questions.find({product_id: `${product_id}`}).exec((err, questions) => {
     if (err) {
-      console.error.bind(console, "Error retrieving questions");
+      console.error.bind(console, "Error retrieving questions: " + err);
       callback(err);
     } else {
       let questionsData = [];
       questions.forEach(question => {
         let transformedDate = formatDate("/Date("+question.date_written+")/");
-        questionsData.push(
+        questionsData.push({
           question_id: question.id,
           product_id: question.product_id,
           body: question.body,
@@ -84,7 +84,7 @@ const getQuestions = async (product_id, callback) => {
           asker_email: question.asker_email,
           reported: question.reported,
           helpful: question.helpful
-        )
+        })
       });
       callback(questionsData);
     }
@@ -119,29 +119,50 @@ const saveQuestion = async (data, callback) => {
   callback();
 }
 
-const getAnswers = (question_id, callback) => {
+const getAnswers = async (question_id, callback) => {
   db.answers.find({question_id: `${question_id}`}).exec((err, questions) => {
     if (err) {
-      console.error.bind(console, "Error retrieving answers");
+      console.error.bind(console, "Error retrieving answers: " + err);
       callback(err);
     } else {
       let answerData = [];
       questions.forEach(answer => {
         let transformedDate = formatDate("/Date("+answer.date_written+")/");
-        answerData.push(
-          id: answer.id,
+        answerData.push({
+          answer_id: answer.id,
           question_id: answer.question_id,
           body: answer.body,
           date_written: transformedDate,
           answerer_name: answer.answerer_name,
           answerer_email: answer.answerer_email,
           reported: answer.reported,
-          helpful: answer.helpful
-        )
+          helpful: answer.helpful,
+          photos: []
+        })
       });
-      callback(answerData);
     }
-  });
+  })
+    .then(() => {
+      answerData.forEach(answer => {
+        db.answer_photos.find({answer_id: answer.answer_id}).exec( (err, pics) => {
+          if (err) {
+            console.error.bind(console, "Error retrieving answer photos: " + err);
+            callback(err);
+          }
+        return pics;
+        })
+      });
+    })
+    .then((pics) => {
+      for (let i = 0; i < answerData.length; i++) {
+        for (let j = 0; j < pics.length; j++) {
+          if (answerData[i].answer_id === pics[j].answer_id) {
+            answerData[i].photos.push(pics[j]);
+          }
+        }
+      }
+      callback(answerData);
+    });
 };
 
 
