@@ -96,7 +96,7 @@ const saveQuestion = async (data, callback) => {
     // Get highest question id for specific product and increment by 1
     let newQuestionId = db.questions.find({product_id: data.data.product_id}).sort({id: -1}).limit(1)
       .then(() => {
-        let document = new QuestionsModel {
+        let document = {
           id: newQuestionId + 1,
           product_id: data.data.product_id,
           body: data.data.body,

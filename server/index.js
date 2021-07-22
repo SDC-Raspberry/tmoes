@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const parser = require('body-parser');
 const port = 3000;
 const db = require('../database/index.js');
 
@@ -16,7 +17,7 @@ app.get('/qa/questions', (req, res) => {
   // Get all questions from db with that product id, return to app
   db.getQuestions((req.query.product_id, () => {
     res.send(data);
-  });
+  }));
 });
 
 app.post('/qa/questions', (req, res) => {
