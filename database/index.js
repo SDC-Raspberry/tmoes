@@ -213,14 +213,14 @@ const getAnswers = async (question_id, callback = () => {}) => {
     });
 };
 
-const saveAnswer = (data, question_id, callback) => {
+const saveAnswer = async (data, question_id, callback) => {
   // Save answer to answer db
   data.data.body   name  email  photos
   db.answers.insert
   // Save photos to answers_photos db
   return new Promise ((resolve, reject) => {
     // Get highest answer id for specific product and increment by 1
-    let newAnswerId = db.answers.find({product_id: data.data.product_id}).sort({id: -1}).limit(1)
+    let newAnswerId = db.answers.find({question_id: question_id}).sort({id: -1}).limit(1)
       .then(() => {
         let document = {
           id: newAnswerId + 1,
@@ -232,13 +232,19 @@ const saveAnswer = (data, question_id, callback) => {
           reported: 0,
           helpful: 0
         };
-        db.answers.insertOne(document)
+        db.answers.insertOne(document);
+        let newPhotoId = db.answers_photos.find({}).sort({id: -1}).limit(1)
           .then(() => {
-            resolve('Successfully saved question');
+            let photoDocument =  {
+              id: newPhotoId + 1,
+              answer_id: newAnswerId + 1,
+              url: data.data.photos
+            }
+            db.answers_photos.insert(photoDocument);
           });
-      })
+        resolve('Successfully saved answer!');
+      });
       .catch((err) => {
-        console.error.bind(console, "Error saving question: " + err);
         reject(err);
         callback(err);
       })

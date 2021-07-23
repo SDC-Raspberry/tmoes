@@ -59,8 +59,4 @@ app.put('/qa/answers/:answer_id/report', (req, res) => {
   // If answer is not reported already, report it
 });
 
-app.post('/qa/photos', (req, res) => {
-  // Add photo document to db including answer id and url
-});
-
 app.listen(port, () => console.log(`App listening on port ${port}!`));
