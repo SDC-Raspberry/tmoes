@@ -60,35 +60,59 @@ const AnswersPhotosModel = mongoose.model('answers_photos', AnswersPhotosSchema)
 */
 
 const formatDate = (d) => {
-  var m = d.match(/\/Date\((\d+)\)\//);
-  return m ? (new Date(+m[1])).toLocalDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'}) : d;
+  return new Date(d).toISOString();
 };
+
+// ------------- MONGO INDEXING
+  // Create an index for questions attached to each product id
+  // Create an index for answers attached to each question
+  // Create an index for photos attached to each answer
 
 
 // ------------- QUERY FUNCTIONS
+// I NEED TO RETHINK ALL OF THIS, MAYBE DO THE WORK ON THE SERVER SIDE
 const getQuestions = async (product_id, callback) => {
-  db.questions.find({product_id: `${product_id}`}).exec((err, questions) => {
+
+  // NEED TO FORMAT PROPERLY STILL
+  let overallData = {
+    product_id: product_id
+  };
+  let results = [];
+  db.questions.find({product_id: product_id}).exec((err, questions) => {
     if (err) {
       console.error.bind(console, "Error retrieving questions: " + err);
       callback(err);
     } else {
       let questionsData = [];
       questions.forEach(question => {
-        let transformedDate = formatDate("/Date("+question.date_written+")/");
-        questionsData.push({
-          question_id: question.id,
-          product_id: question.product_id,
-          body: question.body,
-          date_written: transformedDate,
-          asker_name: question.asker_name,
-          asker_email: question.asker_email,
-          reported: question.reported,
-          helpful: question.helpful
+        if (question.reported < 1) {
+          let transformedDate = formatDate(question.date_written);
+          let answers = getAnswers
+          questionsData.push({
+            question_id: question.id,
+            question_body: question.body,
+            question_date: transformedDate,
+            asker_name: question.asker_name,
+            question_helpfulness: question.helpful,
+            reported: false,
+            answers: {}
+          })
+        }
+      });
+    }
+    return questionsData;
+  })
+    .then((questions) => {
+      // iterate through array of questions
+        // retrieve answers for each question and add to asnwers obj by answer_id
+      questions.forEach(question => {
+        getAnswers(question.question_id, () => {
+          // Answer data comes back with the properties question_id, results which is array of answers for each specific question
+          // Extract answer data and add to answers
         })
       });
-      callback(questionsData);
-    }
-  });
+
+    })
 };
 
 const saveQuestion = async (data, callback) => {
@@ -114,31 +138,36 @@ const saveQuestion = async (data, callback) => {
       .catch((err) => {
         console.error.bind(console, "Error saving question: " + err);
         reject(err);
+        callback(err);
       })
   });
   callback();
 }
 
-const getAnswers = async (question_id, callback) => {
-  db.answers.find({question_id: `${question_id}`}).exec((err, questions) => {
+const getAnswers = async (question_id, callback = () => {}) => {
+  let overallData = {
+    question: question_id,
+    page: 0,
+    count: 5,
+  }
+  db.answers.find({question_id: `${question_id}`}).exec((err, answers) => {
     if (err) {
       console.error.bind(console, "Error retrieving answers: " + err);
       callback(err);
     } else {
       let answerData = [];
-      questions.forEach(answer => {
-        let transformedDate = formatDate("/Date("+answer.date_written+")/");
-        answerData.push({
-          answer_id: answer.id,
-          question_id: answer.question_id,
-          body: answer.body,
-          date_written: transformedDate,
-          answerer_name: answer.answerer_name,
-          answerer_email: answer.answerer_email,
-          reported: answer.reported,
-          helpful: answer.helpful,
-          photos: []
-        })
+      answers.forEach(answer => {
+        let transformedDate = formatDate(answer.date_written);
+        if (answer.reported !== 1) {
+          answerData.push({
+            answer_id: answer.id,
+            body: answer.body,
+            date: transformedDate,
+            answerer_name: answer.answerer_name,
+            helpfulness: answer.helpful,
+            photos: []
+          });
+        }
       });
     }
   })
@@ -170,8 +199,9 @@ const getAnswers = async (question_id, callback) => {
           }
         }
       }
+      overallData.results = answerData;
+      callback(overallData);
     });
-  callback(answerData);
 };
 
 
@@ -180,8 +210,6 @@ const db = mongoose.connection;
 db.on("error", console.error.bind(console, "Error connecting to database"));
 db.once("open", () => {
   console.log("Initialized MongoDB: " + dbName);
-
-
 
 });
 
