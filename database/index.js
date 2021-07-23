@@ -72,22 +72,20 @@ const formatDate = (d) => {
 // ------------- QUERY FUNCTIONS
 // I NEED TO RETHINK ALL OF THIS, MAYBE DO THE WORK ON THE SERVER SIDE
 const getQuestions = async (product_id, callback) => {
-
   // NEED TO FORMAT PROPERLY STILL
-  let overallData = {
+  let finalData = {
     product_id: product_id
   };
   let results = [];
   db.questions.find({product_id: product_id}).exec((err, questions) => {
     if (err) {
-      console.error.bind(console, "Error retrieving questions: " + err);
+      throw new Error(err);
       callback(err);
     } else {
       let questionsData = [];
       questions.forEach(question => {
         if (question.reported < 1) {
           let transformedDate = formatDate(question.date_written);
-          let answers = getAnswers
           questionsData.push({
             question_id: question.id,
             question_body: question.body,
@@ -106,13 +104,20 @@ const getQuestions = async (product_id, callback) => {
       // iterate through array of questions
         // retrieve answers for each question and add to asnwers obj by answer_id
       questions.forEach(question => {
-        getAnswers(question.question_id, () => {
+        getAnswers(question.question_id, (overallData) => {
           // Answer data comes back with the properties question_id, results which is array of answers for each specific question
           // Extract answer data and add to answers
-        })
+          overallData.results.forEach(answer => {
+            let answer_id = answer.answer_id;
+            questionsData.answers.answer_id = answer;
+          });
+        });
       });
-
+      callback(questionsData);
     })
+    .catch((err) => {
+      console.log(err);
+    });
 };
 
 const saveQuestion = async (data, callback) => {
@@ -145,6 +150,7 @@ const saveQuestion = async (data, callback) => {
 }
 
 const getAnswers = async (question_id, callback = () => {}) => {
+  // Need to figure out pagination and count still, hardcoded for now
   let overallData = {
     question: question_id,
     page: 0,
@@ -152,13 +158,13 @@ const getAnswers = async (question_id, callback = () => {}) => {
   }
   db.answers.find({question_id: `${question_id}`}).exec((err, answers) => {
     if (err) {
-      console.error.bind(console, "Error retrieving answers: " + err);
+      throw new Error(err);
       callback(err);
     } else {
       let answerData = [];
       answers.forEach(answer => {
         let transformedDate = formatDate(answer.date_written);
-        if (answer.reported !== 1) {
+        if (answer.reported < 1) {
           answerData.push({
             answer_id: answer.id,
             body: answer.body,
@@ -201,9 +207,44 @@ const getAnswers = async (question_id, callback = () => {}) => {
       }
       overallData.results = answerData;
       callback(overallData);
+    })
+    .catch((err) => {
+      console.log(err);
     });
 };
 
+const saveAnswer = (data, question_id, callback) => {
+  // Save answer to answer db
+  data.data.body   name  email  photos
+  db.answers.insert
+  // Save photos to answers_photos db
+  return new Promise ((resolve, reject) => {
+    // Get highest answer id for specific product and increment by 1
+    let newAnswerId = db.answers.find({product_id: data.data.product_id}).sort({id: -1}).limit(1)
+      .then(() => {
+        let document = {
+          id: newAnswerId + 1,
+          question_id: question_id,
+          body: data.data.body,
+          date_written: Date.now(),
+          answerer_name: data.data.anme,
+          answerer_email: data.data.email,
+          reported: 0,
+          helpful: 0
+        };
+        db.answers.insertOne(document)
+          .then(() => {
+            resolve('Successfully saved question');
+          });
+      })
+      .catch((err) => {
+        console.error.bind(console, "Error saving question: " + err);
+        reject(err);
+        callback(err);
+      })
+  });
+  callback();
+};
 
 // ------------- CONNECT TO DB
 const db = mongoose.connection;

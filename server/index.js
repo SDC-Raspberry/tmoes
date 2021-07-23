@@ -15,7 +15,7 @@ app.use(express.urlencoded({extended: true}));
 
 app.get('/qa/questions', (req, res) => {
   // Get all questions from db with that product id, return to app
-  db.getQuestions((req.query.product_id, () => {
+  db.getQuestions((req.query.product_id, (data) => {
     res.send(data);
   }));
 });
@@ -29,13 +29,17 @@ app.post('/qa/questions', (req, res) => {
 
 app.get('/qa/answers', (req, res) => {
   // Get all answers with coreesponding question id, return to app
-  db.getAnswers(req.query.question_id, () => {
+  db.getAnswers(req.query.question_id, (data) => {
     res.send(data);
   });
 });
 
 app.post('/qa/questions/:question_id/answers', (req, res) => {
   //Add answer to db that includes question id, body, etc
+  let question_id = req.params.question_id;
+  db.saveAnswer(req.body, question_id, () => {
+    res.send();
+  });
 });
 
 app.put('/qa/questions/:question_id/helpful', (req, res) => {
