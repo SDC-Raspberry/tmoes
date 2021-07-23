@@ -80,7 +80,6 @@ const getQuestions = async (product_id, callback) => {
   db.questions.find({product_id: product_id}).exec((err, questions) => {
     if (err) {
       throw new Error(err);
-      callback(err);
     } else {
       let questionsData = [];
       questions.forEach(question => {
@@ -113,10 +112,10 @@ const getQuestions = async (product_id, callback) => {
           });
         });
       });
-      callback(questionsData);
+      callback(null, questionsData);
     })
     .catch((err) => {
-      console.log(err);
+      callback(err, null);
     });
 };
 
@@ -138,15 +137,14 @@ const saveQuestion = async (data, callback) => {
         db.questions.insertOne(document)
           .then(() => {
             resolve('Successfully saved question');
+            callback(null, 'Successfully saved question!');
           });
       })
       .catch((err) => {
-        console.error.bind(console, "Error saving question: " + err);
         reject(err);
-        callback(err);
+        callback(err, null);
       })
   });
-  callback();
 }
 
 const getAnswers = async (question_id, callback = () => {}) => {
@@ -159,7 +157,6 @@ const getAnswers = async (question_id, callback = () => {}) => {
   db.answers.find({question_id: `${question_id}`}).exec((err, answers) => {
     if (err) {
       throw new Error(err);
-      callback(err);
     } else {
       let answerData = [];
       answers.forEach(answer => {
@@ -182,8 +179,7 @@ const getAnswers = async (question_id, callback = () => {}) => {
       answerData.forEach(answer => {
         db.answer_photos.find({answer_id: answer.answer_id}).exec( (err, pics) => {
           if (err) {
-            console.error.bind(console, "Error retrieving answer photos: " + err);
-            callback(err);
+            throw new Error(err);
           } else {
             pics.forEach((pic) => {
               photos.push({
@@ -206,10 +202,10 @@ const getAnswers = async (question_id, callback = () => {}) => {
         }
       }
       overallData.results = answerData;
-      callback(overallData);
+      callback(null, overallData);
     })
     .catch((err) => {
-      console.log(err);
+      callback(err, null);
     });
 };
 
@@ -242,14 +238,28 @@ const saveAnswer = async (data, question_id, callback) => {
             }
             db.answers_photos.insert(photoDocument);
           });
-        resolve('Successfully saved answer!');
+        resolve('Successfully saved answer');
+        callback(null, 'Successfully saved answer!');
       });
       .catch((err) => {
         reject(err);
-        callback(err);
+        callback(err, null);
       })
   });
-  callback();
+};
+
+const markQuestionHelpful = (question_id, callback) => {
+  db.questions.update( { id: question_id },{ $inc: { helpful: 1 }})
+    .then((returnedData) => {
+      if (returnedData !== 1) {
+        throw new Error('Error updating question helpfulness');
+      } else {
+        callback(null, data);
+      }
+    })
+    .catch((err) => {
+      callback(err, null);
+    });
 };
 
 // ------------- CONNECT TO DB
@@ -263,3 +273,5 @@ db.once("open", () => {
 module.exports.getQuestions = getQuestions;
 module.exports.saveQuestion = saveQuestion;
 module.exports.getAnswers = getAnswers;
+module.exports.saveAnswer = saveAnswer;
+module.exports.markQuestionHelpful = markQuestionHelpful;

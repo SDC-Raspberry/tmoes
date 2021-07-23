@@ -14,36 +14,57 @@ app.use(parser.json());
 app.use(express.urlencoded({extended: true}));
 
 app.get('/qa/questions', (req, res) => {
-  // Get all questions from db with that product id, return to app
-  db.getQuestions((req.query.product_id, (data) => {
-    res.send(data);
-  }));
+  db.getQuestions(req.query.product_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
 app.post('/qa/questions', (req, res) => {
-  // Add question to db that includes question id, body, etc
-  db.saveQuestion(req.body, () => {
-    res.send();
+  db.saveQuestion(req.body, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
   })
 });
 
 app.get('/qa/answers', (req, res) => {
-  // Get all answers with coreesponding question id, return to app
-  db.getAnswers(req.query.question_id, (data) => {
-    res.send(data);
+  db.getAnswers(req.query.question_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
   });
 });
 
 app.post('/qa/questions/:question_id/answers', (req, res) => {
   //Add answer to db that includes question id, body, etc
   let question_id = req.params.question_id;
-  db.saveAnswer(req.body, question_id, () => {
-    res.send();
+  db.saveAnswer(req.body, question_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
   });
 });
 
 app.put('/qa/questions/:question_id/helpful', (req, res) => {
   // Increment helpful document for question
+  let question_id = req.params.question_id;
+  db.markQuestionHelpful(question_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
 app.put('/qa/answers/:answer_id/helpful', (req, res) => {
