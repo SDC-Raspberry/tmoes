@@ -69,6 +69,14 @@ app.put('/qa/questions/:question_id/helpful', (req, res) => {
 
 app.put('/qa/answers/:answer_id/helpful', (req, res) => {
   // Increment helpful document of answer
+  let answer_id = req.params.answer_id;
+  db.markAnswerHelpful(answer_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
 app.put('/qa/questions/:question_id/report', (req, res) => {

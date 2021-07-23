@@ -249,7 +249,21 @@ const saveAnswer = async (data, question_id, callback) => {
 };
 
 const markQuestionHelpful = (question_id, callback) => {
-  db.questions.update( { id: question_id },{ $inc: { helpful: 1 }})
+  db.questions.update({ id: question_id }, {$inc: { helpful: 1 }})
+    .then((returnedData) => {
+      if (returnedData !== 1) {
+        throw new Error('Error updating question helpfulness');
+      } else {
+        callback(null, data);
+      }
+    })
+    .catch((err) => {
+      callback(err, null);
+    });
+};
+
+const markAnswerHelpful = (answer_id, callback) => {
+  db.answers.update({ id: answer_id }, {$inc: { helpful: 1 }})
     .then((returnedData) => {
       if (returnedData !== 1) {
         throw new Error('Error updating question helpfulness');
@@ -275,3 +289,4 @@ module.exports.saveQuestion = saveQuestion;
 module.exports.getAnswers = getAnswers;
 module.exports.saveAnswer = saveAnswer;
 module.exports.markQuestionHelpful = markQuestionHelpful;
+module.exports.markAnswerHelpful = markAnswerHelpful;
