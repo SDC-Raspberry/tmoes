@@ -211,8 +211,6 @@ const getAnswers = async (question_id, callback = () => {}) => {
 
 const saveAnswer = async (data, question_id, callback) => {
   // Save answer to answer db
-  data.data.body   name  email  photos
-  db.answers.insert
   // Save photos to answers_photos db
   return new Promise ((resolve, reject) => {
     // Get highest answer id for specific product and increment by 1
@@ -240,7 +238,7 @@ const saveAnswer = async (data, question_id, callback) => {
           });
         resolve('Successfully saved answer');
         callback(null, 'Successfully saved answer!');
-      });
+      })
       .catch((err) => {
         reject(err);
         callback(err, null);
