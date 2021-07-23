@@ -56,7 +56,6 @@ app.post('/qa/questions/:question_id/answers', (req, res) => {
 });
 
 app.put('/qa/questions/:question_id/helpful', (req, res) => {
-  // Increment helpful document for question
   let question_id = req.params.question_id;
   db.markQuestionHelpful(question_id, (err, data) => {
     if (err) {
@@ -68,7 +67,6 @@ app.put('/qa/questions/:question_id/helpful', (req, res) => {
 });
 
 app.put('/qa/answers/:answer_id/helpful', (req, res) => {
-  // Increment helpful document of answer
   let answer_id = req.params.answer_id;
   db.markAnswerHelpful(answer_id, (err, data) => {
     if (err) {
@@ -81,11 +79,26 @@ app.put('/qa/answers/:answer_id/helpful', (req, res) => {
 
 app.put('/qa/questions/:question_id/report', (req, res) => {
   // If question hasn't been reported, report it
-
+  let question_id = req.params.question_id;
+  db.reportQuestion(question_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
 app.put('/qa/answers/:answer_id/report', (req, res) => {
   // If answer is not reported already, report it
+  let answer_id = req.params.answer_id;
+  db.reportAnswer(answer_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
 app.listen(port, () => console.log(`App listening on port ${port}!`));

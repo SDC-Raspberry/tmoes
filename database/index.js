@@ -276,6 +276,34 @@ const markAnswerHelpful = (answer_id, callback) => {
     });
 };
 
+const reportQuestion = (question_id, callback) => {
+  db.questions.update({ id: question_id }, {$inc: { reported: 1 }})
+    .then((returnedData) => {
+      if (returnedData !== 1) {
+        throw new Error('Error updating question helpfulness');
+      } else {
+        callback(null, data);
+      }
+    })
+    .catch((err) => {
+      callback(err, null);
+    });
+};
+
+const reportAnswer = (answer_id, callback) => {
+  db.answers.update({ id: answer_id }, {$inc: { reported: 1 }})
+    .then((returnedData) => {
+      if (returnedData !== 1) {
+        throw new Error('Error updating question helpfulness');
+      } else {
+        callback(null, data);
+      }
+    })
+    .catch((err) => {
+      callback(err, null);
+    });
+};
+
 // ------------- CONNECT TO DB
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "Error connecting to database"));
@@ -290,3 +318,5 @@ module.exports.getAnswers = getAnswers;
 module.exports.saveAnswer = saveAnswer;
 module.exports.markQuestionHelpful = markQuestionHelpful;
 module.exports.markAnswerHelpful = markAnswerHelpful;
+module.exports.reportQuestion = reportQuestion;
+module.exports.reportAnswer = reportAnswer;
