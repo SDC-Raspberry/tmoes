@@ -1,5 +1,5 @@
 const axios = require('axios');
-const {assert, expect} = require('chai');
+const { assert, expect } = require('chai');
 const mongoose = require('mongoose');
 const { sampleQuestionsAPIData, sampleAnswersAPIData, sampleQuestionsDBData, sampleAnswersDBData, sampleAnswersPhotosDBData } = require('../sampleData.js');
 const { Questions, Answers, AnswersPhotos } = require('../database/mongoSchema.js');
@@ -20,27 +20,24 @@ describe('Server Tests', () => {
       return axios.get('http://localhost:3000/qa/questions?product_id=1')
         .then(response => {
           expect(response.data).to.be.a('object');
-          assert.containsAllKeys(response.data, [
-            'question',
-            'page',
-            'count',
-            'results',
-          ]);
+          assert.property(response.data, 'question', 'has property "question"');
+          assert.property(response.data,'page', 'has property "page"');
+          assert.property(response.data, 'count', 'has property "count"');
+          assert.property(response.data, 'results', 'has property "results"');
 
           const results = response.data.results;
           assert.isArray(results);
-          assert.containsAllKeys(results[0], [
-            'answer_id',
-            'body',
-            'date',
-            'answerer_name',
-            'helpfulness',
-            'photos',
-          ]);
+          assert.property(results[0], 'answer_id', 'results[0] has property "answer_id"');
+          assert.property(results[0], 'body', 'results[0] has property "body"');
+          assert.property(results[0], 'date', 'results[0] has property "date"');
+          assert.property(results[0], 'answerer_name', 'results[0] has property "answerer_name"');
+          assert.property(results[0], 'helpfulness', 'results[0] has property "helpfulness"');
+          assert.property(results[0], 'photos', 'results[0] has property "photos"');
+
           assert.isArray(results[0].photos);
           done();
         })
-        .catch(done);
+        .catch(() => done);
     });
 
   });

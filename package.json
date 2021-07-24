@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon ./server/index.js",
-    "test": "jest --coverage --forceExit"
+    "test": "jest --coverage"
   },
   "repository": {
     "type": "git",
@@ -36,9 +36,11 @@
   },
   "jest": {
     "collectCoverage": true,
+    "collectCoverageFrom": ["./**/*.{js, jsx}"],
     "coverageReporters": [
       "json",
       "html"
-    ]
+    ],
+    "verbose": true
   }
 }
