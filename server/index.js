@@ -1,20 +1,19 @@
 const express = require('express');
-const app = express();
 const parser = require('body-parser');
+
+const app = express();
 const port = 3000;
 const db = require('../database/index.js');
-
-// const baseURL = 'https://app-hrsei-api.herokuapp.com/api/fec2/hr-rpp';
-
-// app.get('/', (req, res) => res.send('Message from Express route handler: Test!'));
+const query = require('../database/queries.js');
 
 // Mounting Middleware
 app.use(express.static(__dirname + '/../client/dist'));
 app.use(parser.json());
 app.use(express.urlencoded({extended: true}));
 
+// Routes
 app.get('/qa/questions', (req, res) => {
-  db.getQuestions(req.query.product_id, (err, data) => {
+  query.getQuestions(req.query.product_id, (err, data) => {
     if (err) {
       res.send(err);
     } else {
@@ -24,7 +23,7 @@ app.get('/qa/questions', (req, res) => {
 });
 
 app.post('/qa/questions', (req, res) => {
-  db.saveQuestion(req.body, (err, data) => {
+  query.saveQuestion(req.body, (err, data) => {
     if (err) {
       res.send(err);
     } else {
@@ -34,7 +33,7 @@ app.post('/qa/questions', (req, res) => {
 });
 
 app.get('/qa/answers', (req, res) => {
-  db.getAnswers(req.query.question_id, (err, data) => {
+  query.getAnswers(req.query.question_id, (err, data) => {
     if (err) {
       res.send(err);
     } else {
@@ -44,9 +43,8 @@ app.get('/qa/answers', (req, res) => {
 });
 
 app.post('/qa/questions/:question_id/answers', (req, res) => {
-  //Add answer to db that includes question id, body, etc
   let question_id = req.params.question_id;
-  db.saveAnswer(req.body, question_id, (err, data) => {
+  query.saveAnswer(req.body, question_id, (err, data) => {
     if (err) {
       res.send(err);
     } else {
@@ -57,7 +55,7 @@ app.post('/qa/questions/:question_id/answers', (req, res) => {
 
 app.put('/qa/questions/:question_id/helpful', (req, res) => {
   let question_id = req.params.question_id;
-  db.markQuestionHelpful(question_id, (err, data) => {
+  query.markQuestionHelpful(question_id, (err, data) => {
     if (err) {
       res.send(err);
     } else {
@@ -68,7 +66,7 @@ app.put('/qa/questions/:question_id/helpful', (req, res) => {
 
 app.put('/qa/answers/:answer_id/helpful', (req, res) => {
   let answer_id = req.params.answer_id;
-  db.markAnswerHelpful(answer_id, (err, data) => {
+  query.markAnswerHelpful(answer_id, (err, data) => {
     if (err) {
       res.send(err);
     } else {
@@ -78,9 +76,8 @@ app.put('/qa/answers/:answer_id/helpful', (req, res) => {
 });
 
 app.put('/qa/questions/:question_id/report', (req, res) => {
-  // If question hasn't been reported, report it
   let question_id = req.params.question_id;
-  db.reportQuestion(question_id, (err, data) => {
+  query.reportQuestion(question_id, (err, data) => {
     if (err) {
       res.send(err);
     } else {
@@ -90,9 +87,8 @@ app.put('/qa/questions/:question_id/report', (req, res) => {
 });
 
 app.put('/qa/answers/:answer_id/report', (req, res) => {
-  // If answer is not reported already, report it
   let answer_id = req.params.answer_id;
-  db.reportAnswer(answer_id, (err, data) => {
+  query.reportAnswer(answer_id, (err, data) => {
     if (err) {
       res.send(err);
     } else {
@@ -101,4 +97,7 @@ app.put('/qa/answers/:answer_id/report', (req, res) => {
   });
 });
 
-app.listen(port, () => console.log(`App listening on port ${port}!`));
+const server = app.listen(port, () => console.log(`App listening on port ${port}!\n`));
+
+module.exports.db = db;
+module.exports.server = server;

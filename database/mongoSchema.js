@@ -1,19 +1,9 @@
 var mongoose = require('mongoose');
 
-mongoose.connect('mongodb://localhost:27017/atelier', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
-
-const db = mongoose.connection;
-
 var Schema = mongoose.Schema;
 
-db.on('error', console.error.bind(console, 'Error connecting to database'));
-
-db.once('open', function() {
 // ------------- QUESTIONS
-  var QuestionsSchema = new Schema({
+const QuestionsSchema = new Schema({
     id: Number,
     product_id: Number,
     body: String,
@@ -24,10 +14,10 @@ db.once('open', function() {
     helpful: Number
   });
 
-  var QuestionsModel = mongoose.model('QuestionsModel', QuestionsSchema);
+  const Questions = mongoose.model('questions', QuestionsSchema);
 
   // ------------- ANSWERS
-  var AnswersSchema = new Schema({
+  const AnswersSchema = new Schema({
     id: Number,
     question_id: Number,
     body: String,
@@ -38,15 +28,22 @@ db.once('open', function() {
     helpful: Number,
   });
 
-  var AnswersModel = mongoose.model('AnswersModel', AnswersSchema);
+  const Answers = mongoose.model('answers', AnswersSchema);
 
   // ------------- PHOTOS
-  var AnswersPhotosSchema = new Schema({
+  const AnswersPhotosSchema = new Schema({
     id: Number,
     answer_id: Number,
     url: String
   });
 
-  var AnswersPhotosModel = mongoose.model('AnswersPhotosModel', AnswersPhotosSchema);
-});
+  const AnswersPhotos = mongoose.model('answers_photos', AnswersPhotosSchema);
 
+// ------------- MONGO INDEXING
+  // Create an index for questions attached to each product id
+  // Create an index for answers attached to each question
+  // Create an index for photos attached to each answer
+
+module.exports.Questions = Questions;
+module.exports.Answers = Answers;
+module.exports.AnswersPhotos = AnswersPhotos;
