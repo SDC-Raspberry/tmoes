@@ -7,52 +7,48 @@ const formatDate = (d) => {
 
 // ------------- QUERY FUNCTIONS
 // I NEED TO RETHINK ALL OF THIS, MAYBE DO THE WORK ON THE SERVER SIDE
-const getQuestions = async (product_id, callback) => {
+const getQuestions = async (product_id, callback, page = 1, count = 100) => {
   // NEED TO FORMAT PROPERLY STILL
+  // NEED TO HANDLE PAGE, COUNT STILL
   let finalData = {
     product_id: product_id
   };
   let results = [];
-  db.questions.find({product_id: product_id}).exec((err, questions) => {
-    if (err) {
-      throw new Error(err);
-    } else {
-      let questionsData = [];
-      questions.forEach(question => {
-        if (question.reported < 1) {
-          let transformedDate = formatDate(question.date_written);
-          questionsData.push({
-            question_id: question.id,
-            question_body: question.body,
-            question_date: transformedDate,
-            asker_name: question.asker_name,
-            question_helpfulness: question.helpful,
-            reported: false,
-            answers: {}
-          })
-        }
+  const questionQuery = Questions.find()
+    .where({ product_id: product_id})
+    .limit(count);
+
+  const questionResults = await questionQuery.lean().exec();
+  let questionsData = [];
+  questionResults.forEach(question => {
+    if (question.reported < 1) {
+      let transformedDate = formatDate(question.date_written);
+      questionsData.push({
+        question_id: question.id,
+        question_body: question.body,
+        question_date: transformedDate,
+        asker_name: question.asker_name,
+        question_helpfulness: question.helpful,
+        reported: false,
+        answers: {}
       });
     }
-    return questionsData;
-  })
-    .then((questions) => {
-      // iterate through array of questions
-        // retrieve answers for each question and add to asnwers obj by answer_id
-      questions.forEach(question => {
-        getAnswers(question.question_id, (overallData) => {
-          // Answer data comes back with the properties question_id, results which is array of answers for each specific question
-          // Extract answer data and add to answers
-          overallData.results.forEach(answer => {
-            let answer_id = answer.answer_id;
-            questionsData.answers.answer_id = answer;
-          });
-        });
+  });
+
+  // iterate through array of questions
+    // retrieve answers for each question and add to asnwers obj by answer_id
+  questionsData.forEach(question => {
+    getAnswers(question.question_id, (overallData) => {
+      // Answer data comes back with the properties question_id, results which is array of answers for each specific question
+      // Extract answer data and add to answers
+      overallData.results.forEach(answer => {
+        let answer_id = answer.answer_id;
+        questionsData.answers.answer_id = answer;
       });
-      callback(null, questionsData);
-    })
-    .catch((err) => {
-      callback(err, null);
     });
+  });
+  callback(null, questionsData);
+
 };
 
 const saveQuestion = async (data, callback) => {
@@ -83,66 +79,57 @@ const saveQuestion = async (data, callback) => {
   });
 }
 
-const getAnswers = async (question_id, callback = () => {}) => {
+const getAnswers = async (question_id, callback = () => {}, page = 1, count = 100) => {
   // Need to figure out pagination and count still, hardcoded for now
   let overallData = {
     question: question_id,
     page: 0,
     count: 5,
   }
-  db.answers.find({question_id: `${question_id}`}).exec((err, answers) => {
-    if (err) {
-      throw new Error(err);
-    } else {
-      let answerData = [];
-      answers.forEach(answer => {
-        let transformedDate = formatDate(answer.date_written);
-        if (answer.reported < 1) {
-          answerData.push({
-            answer_id: answer.id,
-            body: answer.body,
-            date: transformedDate,
-            answerer_name: answer.answerer_name,
-            helpfulness: answer.helpful,
-            photos: []
-          });
-        }
+  const answersQuery = Answers.find()
+    .where({ question_id: question_id})
+    .limit(count)
+
+  let answers = await answersQuery.lean().exec();
+
+  let answerData = [];
+  answers.forEach(answer => {
+    let transformedDate = formatDate(answer.date_written);
+    if (answer.reported < 1) {
+      answerData.push({
+        answer_id: answer.id,
+        body: answer.body,
+        date: transformedDate,
+        answerer_name: answer.answerer_name,
+        helpfulness: answer.helpful,
+        photos: []
       });
     }
-  })
-    .then(() => {
-      let photos = [];
-      answerData.forEach(answer => {
-        db.answer_photos.find({answer_id: answer.answer_id}).exec( (err, pics) => {
-          if (err) {
-            throw new Error(err);
-          } else {
-            pics.forEach((pic) => {
-              photos.push({
-                id: pic.id,
-                answer_id: pic.answer_id,
-                url: pic.url
-              })
-            })
-          }
-        })
+  });
+
+  let photos = [];
+  for (let i = 0; i < answerData.length; i++) {
+    let answerPhotos = AnswersPhotos.find()
+      .where({answer_id: answer.answer_id});
+    let pics = await answerPhotos.lean().exec();
+    pics.forEach((pic) => {
+      photos.push({
+        id: pic.id,
+        answer_id: pic.answer_id,
+        url: pic.url
       });
-      return photos;
-    })
-    .then((pics) => {
-      for (let i = 0; i < answerData.length; i++) {
-        for (let j = 0; j < pics.length; j++) {
-          if (answerData[i].answer_id === pics[j].answer_id) {
-            answerData[i].photos.push(pics[j]);
-          }
-        }
-      }
-      overallData.results = answerData;
-      callback(null, overallData);
-    })
-    .catch((err) => {
-      callback(err, null);
     });
+  }
+
+  for (let i = 0; i < answerData.length; i++) {
+    for (let j = 0; j < pics.length; j++) {
+      if (answerData[i].answer_id === photos[j].answer_id) {
+        answerData[i].photos.push(photos[j]);
+      }
+    }
+  }
+  overallData.results = answerData;
+  callback(null, overallData);
 };
 
 const saveAnswer = async (data, question_id, callback) => {
