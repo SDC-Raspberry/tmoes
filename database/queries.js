@@ -48,34 +48,30 @@ const getQuestions = async (product_id, callback, page = 1, count = 100) => {
     });
   });
   callback(null, questionsData);
-
 };
 
-const saveQuestion = async (data, callback) => {
-  return new Promise ((resolve, reject) => {
+const saveQuestion = (data, callback) => {
+  return new Promise (async (resolve, reject) => {
     // Get highest question id for specific product and increment by 1
-    let newQuestionId = db.questions.find({product_id: data.data.product_id}).sort({id: -1}).limit(1)
-      .then(() => {
-        let document = {
-          id: newQuestionId + 1,
-          product_id: data.data.product_id,
-          body: data.data.body,
-          date_written: Date.now(),
-          asker_name: data.data.anme,
-          asker_email: data.data.email,
-          reported: 0,
-          helpful: 0
-        };
-        db.questions.insertOne(document)
-          .then(() => {
-            resolve('Successfully saved question');
-            callback(null, 'Successfully saved question!');
-          });
-      })
-      .catch((err) => {
-        reject(err);
-        callback(err, null);
-      })
+    let questionIdQuery = Questions.find()
+      .where({product_id: data.data.product_id})
+      .sort({id: -1})
+      .limit(1);
+    let newQuestionId = await questionIdQuery.lean().exec();
+
+    let document = {
+      id: newQuestionId + 1,
+      product_id: data.data.product_id,
+      body: data.data.body,
+      date_written: Date.now(),
+      asker_name: data.data.anme,
+      asker_email: data.data.email,
+      reported: 0,
+      helpful: 0
+    };
+    let questionInsertQuery = Questions.insertOne(document);
+    let successfulPut = await questionInsertQuery.exec();
+    successfulPut ? callback(null, 'Successfully added question') : callback(err, null);
   });
 }
 
@@ -132,97 +128,51 @@ const getAnswers = async (question_id, callback = () => {}, page = 1, count = 10
   callback(null, overallData);
 };
 
-const saveAnswer = async (data, question_id, callback) => {
+const saveAnswer = (data, question_id, callback) => {
   // Save answer to answer db
   // Save photos to answers_photos db
-  return new Promise ((resolve, reject) => {
+  return new Promise (async (resolve, reject) => {
     // Get highest answer id for specific product and increment by 1
-    let newAnswerId = db.answers.find({question_id: question_id}).sort({id: -1}).limit(1)
-      .then(() => {
-        let document = {
-          id: newAnswerId + 1,
-          question_id: question_id,
-          body: data.data.body,
-          date_written: Date.now(),
-          answerer_name: data.data.anme,
-          answerer_email: data.data.email,
-          reported: 0,
-          helpful: 0
-        };
-        db.answers.insertOne(document);
-        let newPhotoId = db.answers_photos.find({}).sort({id: -1}).limit(1)
-          .then(() => {
-            let photoDocument =  {
-              id: newPhotoId + 1,
-              answer_id: newAnswerId + 1,
-              url: data.data.photos
-            }
-            db.answers_photos.insert(photoDocument);
-          });
-        resolve('Successfully saved answer');
-        callback(null, 'Successfully saved answer!');
-      })
-      .catch((err) => {
-        reject(err);
-        callback(err, null);
-      })
+    let newAnswerIdQuery = Answers.find({question_id: question_id}).sort({id: -1}).limit(1);
+    let newAnswerId = await newAnswerQuery();
+      let document = {
+        id: newAnswerId + 1,
+        question_id: question_id,
+        body: data.data.body,
+        date_written: Date.now(),
+        answerer_name: data.data.name,
+        answerer_email: data.data.email,
+        reported: 0,
+        helpful: 0
+      };
+      let answersQuery = Answers.insertOne(document);
+      let successfulPut = await answersQuery();
+      successfulPut ? callback(null, 'Successfully added answer') : callback(err, null);
   });
 };
 
-const markQuestionHelpful = (question_id, callback) => {
-  db.questions.update({ id: question_id }, {$inc: { helpful: 1 }})
-    .then((returnedData) => {
-      if (returnedData !== 1) {
-        throw new Error('Error updating question helpfulness');
-      } else {
-        callback(null, data);
-      }
-    })
-    .catch((err) => {
-      callback(err, null);
-    });
+const markQuestionHelpful = async (question_id, callback) => {
+  let updateQuery = Questions.update({id: question_id}, {$inc: { helpful: 1 }});
+  let successfulPut = await updateQuery();
+  successfulPut === 1 ? callback(null, 'Successfully updated question') : callback(err, null);
 };
 
-const markAnswerHelpful = (answer_id, callback) => {
-  db.answers.update({ id: answer_id }, {$inc: { helpful: 1 }})
-    .then((returnedData) => {
-      if (returnedData !== 1) {
-        throw new Error('Error updating question helpfulness');
-      } else {
-        callback(null, data);
-      }
-    })
-    .catch((err) => {
-      callback(err, null);
-    });
+const markAnswerHelpful = async (answer_id, callback) => {
+  let updateQuery = Questions.update({id: answer_id}, {$inc: { helpful: 1 }});
+  let successfulPut = await updateQuery();
+  successfulPut === 1 ? callback(null, 'Successfully updated answer') : callback(err, null);
 };
 
-const reportQuestion = (question_id, callback) => {
-  db.questions.update({ id: question_id }, {$inc: { reported: 1 }})
-    .then((returnedData) => {
-      if (returnedData !== 1) {
-        throw new Error('Error updating question helpfulness');
-      } else {
-        callback(null, data);
-      }
-    })
-    .catch((err) => {
-      callback(err, null);
-    });
+const reportQuestion = async (question_id, callback) => {
+  let updateQuery = Questions.update({id: question_id}, {$inc: { reported: 1 }});
+  let successfulPut = await updateQuery();
+  successfulPut > 0 ? callback(null, 'Successfully updated question') : callback(err, null);
 };
 
-const reportAnswer = (answer_id, callback) => {
-  db.answers.update({ id: answer_id }, {$inc: { reported: 1 }})
-    .then((returnedData) => {
-      if (returnedData !== 1) {
-        throw new Error('Error updating question helpfulness');
-      } else {
-        callback(null, data);
-      }
-    })
-    .catch((err) => {
-      callback(err, null);
-    });
+const reportAnswer = async (answer_id, callback) => {
+  let updateQuery = Questions.update({id: answer_id}, {$inc: { reported: 1 }});
+  let successfulPut = await updateQuery();
+  successfulPut > 0 ? callback(null, 'Successfully updated answer') : callback(err, null);
 };
 
 module.exports.getQuestions = getQuestions;

@@ -20,6 +20,38 @@ describe('Server Tests', () => {
       return axios.get('http://localhost:3000/qa/questions?product_id=1')
         .then(response => {
           expect(response.data).to.be.a('object');
+          assert.property(response.data, 'product', 'has property "product"');
+          assert.property(response.data, 'results', 'has property "results"');
+
+          const results = response.data.results;
+          assert.isArray(results);
+          assert.property(results[0], 'question_id', 'results[0] has property "question_id"');
+          assert.property(results[0], 'question_body', 'results[0] has property "question_body"');
+          assert.property(results[0], 'question_date', 'results[0] has property "question_date"');
+          assert.property(results[0], 'asker_name', 'results[0] has property "asker_name"');
+          assert.property(results[0], 'question_helpfulness', 'results[0] has property "question_helpfulness"');
+          assert.property(results[0], 'reported', 'results[0] has property "reported"');
+          assert.property(results[0], 'answers', 'results[0] has property "asnwers"');
+
+          assert.isArray(results[0].answers);
+          expect(results[0]).reported.to.be(false);
+          done();
+        })
+        .catch(() => done);
+    });
+  });
+
+  // describe('POST /qa/questions', () => {
+  //   it('should return "Successfully added question', () => {
+
+  //   })
+  // });
+
+  describe('GET /qa/answers', (done) => {
+    it('should get the expected shape of data from the query', () => {
+      return axios.get('http://localhost:3000/qa/answers?question_id=1')
+        .then(response => {
+          expect(response.data).to.be.a('object');
           assert.property(response.data, 'question', 'has property "question"');
           assert.property(response.data,'page', 'has property "page"');
           assert.property(response.data, 'count', 'has property "count"');
@@ -38,19 +70,8 @@ describe('Server Tests', () => {
           done();
         })
         .catch(() => done);
-    });
-
   });
-
-  // describe('POST /qa/questions', () => {
-
-  // });
-
-  // describe('GET /qa/answers', () => {
-  //   it('should get the expected shape of data from the query', () => {
-
-  //   });
-  // });
+  });
 
   // describe('POST /qa/questions/:question_id/answers', () => {
 
@@ -77,5 +98,4 @@ describe('Server Tests', () => {
     server.close();
     done();
   });
-
 });
