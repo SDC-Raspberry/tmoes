@@ -31,7 +31,7 @@ describe('Server Tests', () => {
           assert.property(results[0], 'asker_name', 'results[0] has property "asker_name"');
           assert.property(results[0], 'question_helpfulness', 'results[0] has property "question_helpfulness"');
           assert.property(results[0], 'reported', 'results[0] has property "reported"');
-          assert.property(results[0], 'answers', 'results[0] has property "asnwers"');
+          assert.property(results[0], 'answers', 'results[0] has property "answers"');
 
           assert.isArray(results[0].answers);
           expect(results[0]).reported.to.be(false);
@@ -74,23 +74,23 @@ describe('Server Tests', () => {
   });
 
   // describe('POST /qa/questions/:question_id/answers', () => {
-
+  //  // Post some fake data, then delete the fake data
   // });
 
   // describe('PUT /qa/questions/:question_id/helpful', () => {
-
+  // // Put data (mark question as helpful, then decrement)
   // });
 
   // describe('PUT /qa/answers/:answer_id/helpful', () => {
-
+ // // Put data (mark answer as helpful, then decrement)
   // });
 
   // describe('PUT /qa/questions/:question_id/report', () => {
-
+    // // Put data (mark question as reported, must be a previously unreported question, then decrement)
   // });
 
   // describe('PUT /qa/answers/:answer_id/report', () => {
-
+    // // Put data (mark answer as reported, must be a previously unreported answer, then decrement)
   // });
 
   afterEach((done) => {
