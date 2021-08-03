@@ -1,47 +1,103 @@
 const express = require('express');
+const parser = require('body-parser');
+
 const app = express();
 const port = 3000;
 const db = require('../database/index.js');
+const query = require('../database/queries.js');
 
-// const baseURL = 'https://app-hrsei-api.herokuapp.com/api/fec2/hr-rpp';
+// Mounting Middleware
+app.use(express.static(__dirname + '/../client/dist'));
+app.use(parser.json());
+app.use(express.urlencoded({extended: true}));
 
-// app.get('/', (req, res) => res.send('Message from Express route handler: Test!'));
-
-app.get('/qa/questions?product_id', (req, res) => {
-  // Get all questions from db with that product id, return to app
+// Routes
+app.get('/qa/questions', (req, res) => {
+  query.getQuestions(req.query.product_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
 app.post('/qa/questions', (req, res) => {
-  // Add question to db that includes question id, body, etc
+  query.saveQuestion(req.body, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  })
 });
 
-app.get('/qa/answers?question_id', (req, res) => {
-  // Get all answers with coreesponding question id, return to app
+app.get('/qa/answers', (req, res) => {
+  query.getAnswers(req.query.question_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
-app.post('/qa/questions/question_id/answers', (req, res) => { // question_id is not correct
-  //Add answer to db that includes question id, body, etc
+app.post('/qa/questions/:question_id/answers', (req, res) => {
+  let question_id = req.params.question_id;
+  query.saveAnswer(req.body, question_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
-app.put('/qa/questions/question_id/helpful', (req, res) => { //question_id is not correct
-  // Increment helpful document for question
+app.put('/qa/questions/:question_id/helpful', (req, res) => {
+  let question_id = req.params.question_id;
+  query.markQuestionHelpful(question_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
-app.put('/qa/answers/answer_id/helpful', (req, res) => { //answer_id is not correct
-  // Increment helpful document of answer
+app.put('/qa/answers/:answer_id/helpful', (req, res) => {
+  let answer_id = req.params.answer_id;
+  query.markAnswerHelpful(answer_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
-app.put('/qa/questions/question_id/report', (req, res) => { // question_id is not correct
-  // If question hasn't been reported, report it
-
+app.put('/qa/questions/:question_id/report', (req, res) => {
+  let question_id = req.params.question_id;
+  query.reportQuestion(question_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
-app.put('/qa/answers/answer.id/report', (req, res) => { //answer.id is not correct
-  // If answer is not reported already, report it
+app.put('/qa/answers/:answer_id/report', (req, res) => {
+  let answer_id = req.params.answer_id;
+  query.reportAnswer(answer_id, (err, data) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.send(data);
+    }
+  });
 });
 
-app.post('/qa/photos', (req, res) => {
-  // Add photo document to db including answer id and url
-});
+const server = app.listen(port, () => console.log(`App listening on port ${port}!\n`));
 
-app.listen(port, () => console.log(`App listening on port ${port}!`));
+module.exports.db = db;
+module.exports.server = server;
