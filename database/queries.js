@@ -6,7 +6,6 @@ const formatDate = (d) => {
 };
 
 // ------------- QUERY FUNCTIONS
-// I NEED TO RETHINK ALL OF THIS, MAYBE DO THE WORK ON THE SERVER SIDE
 const getQuestions = async (product_id, callback, page = 1, count = 100) => {
   // NEED TO FORMAT PROPERLY STILL
   // NEED TO HANDLE PAGE, COUNT STILL
@@ -37,16 +36,18 @@ const getQuestions = async (product_id, callback, page = 1, count = 100) => {
 
   // iterate through array of questions
     // retrieve answers for each question and add to asnwers obj by answer_id
-  questionsData.forEach(question => {
-    getAnswers(question.question_id, (overallData) => {
-      // Answer data comes back with the properties question_id, results which is array of answers for each specific question
-      // Extract answer data and add to answers
-      overallData.results.forEach(answer => {
-        let answer_id = answer.answer_id;
-        questionsData.answers.answer_id = answer;
-      });
-    });
-  });
+  // for (var i = 0; i < questionsData.length; i++) {
+  //   getAnswers(questionsData[i].question_id, (overallData) => {
+  //     // Answer data comes back with the properties question_id, results which is array of answers for each specific question
+  //     // Extract answer data and add to answers
+  //     overallData.results.forEach(answer => {
+  //       let answer_id = answer.answer_id;
+  //       questionsData.answers[answer_id] = answer;
+  //     });
+  //   });
+  // }
+
+
   callback(null, questionsData);
 };
 
@@ -81,6 +82,7 @@ const getAnswers = async (question_id, callback = () => {}, page = 1, count = 10
     question: question_id,
     page: 0,
     count: 5,
+    results: []
   }
   const answersQuery = Answers.find()
     .where({ question_id: question_id})
@@ -106,7 +108,7 @@ const getAnswers = async (question_id, callback = () => {}, page = 1, count = 10
   let photos = [];
   for (let i = 0; i < answerData.length; i++) {
     let answerPhotos = AnswersPhotos.find()
-      .where({answer_id: answer.answer_id});
+      .where({answer_id: answerData[i].answer_id});
     let pics = await answerPhotos.lean().exec();
     pics.forEach((pic) => {
       photos.push({
@@ -116,14 +118,18 @@ const getAnswers = async (question_id, callback = () => {}, page = 1, count = 10
       });
     });
   }
+  console.log('photos', photos);
 
   for (let i = 0; i < answerData.length; i++) {
-    for (let j = 0; j < pics.length; j++) {
+    for (let j = 0; j < photos.length; j++) {
       if (answerData[i].answer_id === photos[j].answer_id) {
-        answerData[i].photos.push(photos[j]);
+        answerData[i].photos.push({id: photos[j].id, url: photos[j].url});
       }
     }
   }
+
+  console.log('overallData.results', overallData.results);
+
   overallData.results = answerData;
   callback(null, overallData);
 };
