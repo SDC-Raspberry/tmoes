@@ -10,11 +10,12 @@ const getQuestions = async (product_id, callback, page = 1, count = 100) => {
   // NEED TO FORMAT PROPERLY STILL
   // NEED TO HANDLE PAGE, COUNT STILL
   let finalData = {
-    product_id: product_id
+    product_id: product_id,
+    results: []
   };
   let results = [];
   const questionQuery = Questions.find()
-    .where({ product_id: product_id})
+    .where({ product_id: product_id })
     .limit(count);
 
   const questionResults = await questionQuery.lean().exec();
@@ -34,6 +35,36 @@ const getQuestions = async (product_id, callback, page = 1, count = 100) => {
     }
   });
 
+  let answers = [];
+  for (let i = 0; i < questionsData.length; i++) {
+    let answerQuery = Answers.find()
+      .where({ question_id: questionsData[i].question_id })
+      .limit(count);
+    answers[i] = await answerQuery.lean().exec();
+  }
+
+  for (let i = 0; i < questionsData.length; i++) {
+    for (let j = 0; j < answers.length; j++) {
+      console.log('answers QID', answers[j].question_id, 'Questions QID', questionsData[i].question_id);
+      answers[j].forEach( answer => {
+        if (answer.question_id === questionsData[i].question_id) {
+          let id = answer.id;
+          let transformedDate = formatDate(answer.date_written);
+          questionsData[i].answers[id] = {
+            id: id,
+            body: answer.body,
+            date: transformedDate,
+            answerer_name: answer.answerer_name,
+            helpfulness: answer.helpful,
+            photos: []
+          }
+        }
+      });
+    }
+  }
+
+
+
   // iterate through array of questions
     // retrieve answers for each question and add to asnwers obj by answer_id
   // for (var i = 0; i < questionsData.length; i++) {
@@ -46,9 +77,9 @@ const getQuestions = async (product_id, callback, page = 1, count = 100) => {
   //     });
   //   });
   // }
+  finalData.results = questionsData;
 
-
-  callback(null, questionsData);
+  callback(null, finalData);
 };
 
 const saveQuestion = (data, callback) => {
@@ -118,7 +149,6 @@ const getAnswers = async (question_id, callback = () => {}, page = 1, count = 10
       });
     });
   }
-  console.log('photos', photos);
 
   for (let i = 0; i < answerData.length; i++) {
     for (let j = 0; j < photos.length; j++) {
@@ -127,8 +157,6 @@ const getAnswers = async (question_id, callback = () => {}, page = 1, count = 10
       }
     }
   }
-
-  console.log('overallData.results', overallData.results);
 
   overallData.results = answerData;
   callback(null, overallData);
@@ -140,7 +168,7 @@ const saveAnswer = (data, question_id, callback) => {
   return new Promise (async (resolve, reject) => {
     // Get highest answer id for specific product and increment by 1
     let newAnswerIdQuery = Answers.find({question_id: question_id}).sort({id: -1}).limit(1);
-    let newAnswerId = await newAnswerQuery();
+    let newAnswerId = await newAnswerIdQuery();
       let document = {
         id: newAnswerId + 1,
         question_id: question_id,
@@ -160,13 +188,13 @@ const saveAnswer = (data, question_id, callback) => {
 const markQuestionHelpful = async (question_id, callback) => {
   let updateQuery = Questions.update({id: question_id}, {$inc: { helpful: 1 }});
   let successfulPut = await updateQuery();
-  successfulPut === 1 ? callback(null, 'Successfully updated question') : callback(err, null);
+  successfulPut > 0 ? callback(null, 'Successfully updated question') : callback(err, null);
 };
 
 const markAnswerHelpful = async (answer_id, callback) => {
   let updateQuery = Questions.update({id: answer_id}, {$inc: { helpful: 1 }});
   let successfulPut = await updateQuery();
-  successfulPut === 1 ? callback(null, 'Successfully updated answer') : callback(err, null);
+  successfulPut > 0 ? callback(null, 'Successfully updated answer') : callback(err, null);
 };
 
 const reportQuestion = async (question_id, callback) => {
