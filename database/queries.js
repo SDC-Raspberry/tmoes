@@ -7,17 +7,18 @@ const formatDate = (d) => {
 
 // ------------- QUERY FUNCTIONS
 const getQuestions = async (product_id, callback, page = 1, count = 100) => {
-  // NEED TO FORMAT PROPERLY STILL
   // NEED TO HANDLE PAGE, COUNT STILL
   let finalData = {
     product_id: product_id,
     results: []
   };
+
   let results = [];
   const questionQuery = Questions.find()
     .where({ product_id: product_id })
     .limit(count);
 
+  // Format questions data
   const questionResults = await questionQuery.lean().exec();
   let questionsData = [];
   questionResults.forEach(question => {
@@ -35,6 +36,7 @@ const getQuestions = async (product_id, callback, page = 1, count = 100) => {
     }
   });
 
+  // Make answers query and store results in array
   let answers = [];
   for (let i = 0; i < questionsData.length; i++) {
     let answerQuery = Answers.find()
@@ -43,9 +45,9 @@ const getQuestions = async (product_id, callback, page = 1, count = 100) => {
     answers[i] = await answerQuery.lean().exec();
   }
 
+  // Format answers data --- Triple nested loop here
   for (let i = 0; i < questionsData.length; i++) {
     for (let j = 0; j < answers.length; j++) {
-      console.log('answers QID', answers[j].question_id, 'Questions QID', questionsData[i].question_id);
       answers[j].forEach( answer => {
         if (answer.question_id === questionsData[i].question_id) {
           let id = answer.id;
@@ -63,20 +65,18 @@ const getQuestions = async (product_id, callback, page = 1, count = 100) => {
     }
   }
 
+  let photos = [];
+  for (let i = 0; i < questionsData.length; i++) {
+    for (let answer in questionsData[i].answers) {
+      let answersPhotosQuery = AnswersPhotos.find()
+        .where({ answer_id: answer })
+      let temp = await answersPhotosQuery.lean().exec();
+      if (temp[0]) {
+        questionsData[i].answers[answer].photos.push({id: temp[0].id, url: temp[0].url})
+      }
+    }
+  }
 
-
-  // iterate through array of questions
-    // retrieve answers for each question and add to asnwers obj by answer_id
-  // for (var i = 0; i < questionsData.length; i++) {
-  //   getAnswers(questionsData[i].question_id, (overallData) => {
-  //     // Answer data comes back with the properties question_id, results which is array of answers for each specific question
-  //     // Extract answer data and add to answers
-  //     overallData.results.forEach(answer => {
-  //       let answer_id = answer.answer_id;
-  //       questionsData.answers[answer_id] = answer;
-  //     });
-  //   });
-  // }
   finalData.results = questionsData;
 
   callback(null, finalData);
