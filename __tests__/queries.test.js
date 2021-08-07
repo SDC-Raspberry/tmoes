@@ -12,7 +12,7 @@ describe("Queries Tests", () => {
       useUnifiedTopology: true
     });
     const db = mongoose.connection;
-    db.on('error', throw new Error(error));
+    // db.on('error', throw new Error(error));
     db.once('open', done);
   });
 

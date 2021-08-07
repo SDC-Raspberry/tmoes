@@ -16,6 +16,7 @@ describe('Server Tests', () => {
   });
 
   describe('GET /qa/questions', (done) => {
+    jest.setTimeout(10000);
     it('should get the expected shape of data from the query', () => {
       return axios.get('http://localhost:3000/qa/questions?product_id=1')
         .then(response => {
@@ -42,7 +43,7 @@ describe('Server Tests', () => {
   });
 
   // describe('POST /qa/questions', () => {
-  //   it('should return "Successfully added question', () => {
+  //   it('should return "Successfully added question"', () => {
 
   //   })
   // });

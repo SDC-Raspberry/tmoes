@@ -6,18 +6,19 @@ const formatDate = (d) => {
 };
 
 // ------------- QUERY FUNCTIONS
-// I NEED TO RETHINK ALL OF THIS, MAYBE DO THE WORK ON THE SERVER SIDE
 const getQuestions = async (product_id, callback, page = 1, count = 100) => {
-  // NEED TO FORMAT PROPERLY STILL
   // NEED TO HANDLE PAGE, COUNT STILL
   let finalData = {
-    product_id: product_id
+    product_id: product_id,
+    results: []
   };
+
   let results = [];
   const questionQuery = Questions.find()
-    .where({ product_id: product_id})
+    .where({ product_id: product_id })
     .limit(count);
 
+  // Format questions data
   const questionResults = await questionQuery.lean().exec();
   let questionsData = [];
   questionResults.forEach(question => {
@@ -35,19 +36,50 @@ const getQuestions = async (product_id, callback, page = 1, count = 100) => {
     }
   });
 
-  // iterate through array of questions
-    // retrieve answers for each question and add to asnwers obj by answer_id
-  questionsData.forEach(question => {
-    getAnswers(question.question_id, (overallData) => {
-      // Answer data comes back with the properties question_id, results which is array of answers for each specific question
-      // Extract answer data and add to answers
-      overallData.results.forEach(answer => {
-        let answer_id = answer.answer_id;
-        questionsData.answers.answer_id = answer;
+  // Make answers query and store results in array
+  let answers = [];
+  for (let i = 0; i < questionsData.length; i++) {
+    let answerQuery = Answers.find()
+      .where({ question_id: questionsData[i].question_id })
+      .limit(count);
+    answers[i] = await answerQuery.lean().exec();
+  }
+
+  // Format answers data --- Triple nested loop here
+  for (let i = 0; i < questionsData.length; i++) {
+    for (let j = 0; j < answers.length; j++) {
+      answers[j].forEach( answer => {
+        if (answer.question_id === questionsData[i].question_id) {
+          let id = answer.id;
+          let transformedDate = formatDate(answer.date_written);
+          questionsData[i].answers[id] = {
+            id: id,
+            body: answer.body,
+            date: transformedDate,
+            answerer_name: answer.answerer_name,
+            helpfulness: answer.helpful,
+            photos: []
+          }
+        }
       });
-    });
-  });
-  callback(null, questionsData);
+    }
+  }
+
+  let photos = [];
+  for (let i = 0; i < questionsData.length; i++) {
+    for (let answer in questionsData[i].answers) {
+      let answersPhotosQuery = AnswersPhotos.find()
+        .where({ answer_id: answer })
+      let temp = await answersPhotosQuery.lean().exec();
+      if (temp[0]) {
+        questionsData[i].answers[answer].photos.push({id: temp[0].id, url: temp[0].url})
+      }
+    }
+  }
+
+  finalData.results = questionsData;
+
+  callback(null, finalData);
 };
 
 const saveQuestion = (data, callback) => {
@@ -81,6 +113,7 @@ const getAnswers = async (question_id, callback = () => {}, page = 1, count = 10
     question: question_id,
     page: 0,
     count: 5,
+    results: []
   }
   const answersQuery = Answers.find()
     .where({ question_id: question_id})
@@ -106,7 +139,7 @@ const getAnswers = async (question_id, callback = () => {}, page = 1, count = 10
   let photos = [];
   for (let i = 0; i < answerData.length; i++) {
     let answerPhotos = AnswersPhotos.find()
-      .where({answer_id: answer.answer_id});
+      .where({answer_id: answerData[i].answer_id});
     let pics = await answerPhotos.lean().exec();
     pics.forEach((pic) => {
       photos.push({
@@ -118,12 +151,13 @@ const getAnswers = async (question_id, callback = () => {}, page = 1, count = 10
   }
 
   for (let i = 0; i < answerData.length; i++) {
-    for (let j = 0; j < pics.length; j++) {
+    for (let j = 0; j < photos.length; j++) {
       if (answerData[i].answer_id === photos[j].answer_id) {
-        answerData[i].photos.push(photos[j]);
+        answerData[i].photos.push({id: photos[j].id, url: photos[j].url});
       }
     }
   }
+
   overallData.results = answerData;
   callback(null, overallData);
 };
@@ -134,7 +168,7 @@ const saveAnswer = (data, question_id, callback) => {
   return new Promise (async (resolve, reject) => {
     // Get highest answer id for specific product and increment by 1
     let newAnswerIdQuery = Answers.find({question_id: question_id}).sort({id: -1}).limit(1);
-    let newAnswerId = await newAnswerQuery();
+    let newAnswerId = await newAnswerIdQuery();
       let document = {
         id: newAnswerId + 1,
         question_id: question_id,
@@ -154,13 +188,13 @@ const saveAnswer = (data, question_id, callback) => {
 const markQuestionHelpful = async (question_id, callback) => {
   let updateQuery = Questions.update({id: question_id}, {$inc: { helpful: 1 }});
   let successfulPut = await updateQuery();
-  successfulPut === 1 ? callback(null, 'Successfully updated question') : callback(err, null);
+  successfulPut > 0 ? callback(null, 'Successfully updated question') : callback(err, null);
 };
 
 const markAnswerHelpful = async (answer_id, callback) => {
   let updateQuery = Questions.update({id: answer_id}, {$inc: { helpful: 1 }});
   let successfulPut = await updateQuery();
-  successfulPut === 1 ? callback(null, 'Successfully updated answer') : callback(err, null);
+  successfulPut > 0 ? callback(null, 'Successfully updated answer') : callback(err, null);
 };
 
 const reportQuestion = async (question_id, callback) => {
