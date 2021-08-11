@@ -16,7 +16,7 @@ describe('Server Tests', () => {
   });
 
   describe('GET /qa/questions', (done) => {
-    jest.setTimeout(10000);
+    jest.setTimeout(100000);
     it('should get the expected shape of data from the query', () => {
       return axios.get('http://localhost:3000/qa/questions?product_id=1')
         .then(response => {
